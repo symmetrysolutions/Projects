@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "../ColorTest"
+		},
+		{
+			"name": "AirQuality",
+			"path": "."
+		},
+		{
+			"name": "SensorTest32",
+			"path": "../SensorTest32"
+		}
+	],
+	"settings": {}
+}
