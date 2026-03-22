@@ -1,7 +1,17 @@
 #include <Arduino.h>
 #include "motorControl.h"
 #include "sensorUtils.h"
+#include <BLEDevice.h>
+#include <BLEServer.h>
+#include <BLEUtils.h>
+#include <BLE2902.h>
 #include "esp32_s3_pins.h"
+
+// My Car Service For BlueTooth Control
+#define SERVICE_UUID "12345678-1234-1234-1234-1234567890AB"
+#define TX_UUID      "12345678-1234-1234-1234-1234567890AC"
+#define RX_UUID      "12345678-1234-1234-1234-1234567890AD"
+
 
 #define MIN_SPEED 25
 #define MAX_SPEED 255
@@ -28,6 +38,46 @@ void setRotateLeft();
 void stopMotors();
 boolean isObstacleDetected(float threshold);
 
+int throttle = 0;
+int steering = 0;
+unsigned long lastCmd = 0;
+
+BLECharacteristic *tx;
+
+class RXCallbacks: public BLECharacteristicCallbacks {
+    void onWrite(BLECharacteristic *c) {
+        String cmd = String(c->getValue().c_str());
+        cmd.trim();
+        
+        lastCmd = millis();
+        
+        if (cmd.startsWith("T:")) {
+            throttle = cmd.substring(2).toInt();
+        }
+        else if (cmd.startsWith("S:")) {
+            steering = cmd.substring(2).toInt();
+        }
+        else if (cmd == "STOP") {
+            throttle = 0;
+            steering = 0;
+        }
+    }
+};
+
+void setupBlueTooth() {
+	BLEDevice::init("ESP32 Car");
+	BLEServer *server = BLEDevice::createServer();
+	BLEService *service = server->createService(SERVICE_UUID);
+	
+	tx = service->createCharacteristic(TX_UUID, BLECharacteristic::PROPERTY_NOTIFY);
+	tx->addDescriptor(new BLE2902());
+	
+	service->createCharacteristic(RX_UUID, BLECharacteristic::PROPERTY_WRITE)->setCallbacks(new RXCallbacks());
+	
+	service->start();
+	server->getAdvertising()->start();
+}
+
 void setup()   
 {   
 	 Serial.begin(115200);   
@@ -47,6 +97,7 @@ void setup()
 
 	 // Initialize Distance Sensor
 	 distanceSensorSetup(TRIG_PIN, ECHO_PIN);
+	 setupBlueTooth();
 }   
 
 void loop()   
@@ -55,6 +106,12 @@ void loop()
 	// frequencyTest();
 	checkObstacleTest();
 	// delay(500); // Wait before next reading
+
+	
+	if (millis() - lastCmd > 2000) {
+		throttle = 0;
+		steering = 0;
+	}
 } 
 
 void setForwardMotion() {
