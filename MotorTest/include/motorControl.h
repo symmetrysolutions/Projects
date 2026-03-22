@@ -3,6 +3,7 @@
 struct motor {
   int speed = 0;
   int speedPin = -1;
+  int channel = -1;
   int directionPin1 = -1;
   int directionPin2 = -1;
 
@@ -12,7 +13,7 @@ struct motor {
   } direction;
 };
 
-void setupMotor(motor &motor, int speedPin, int directionPin1, int directionPin2);
+void setupMotor(motor &motor, int channel, int speedPin, int directionPin1, int directionPin2);
 void sendAllToMotor(motor motor);
 void sendDirectionToMotor(motor motor);
 
