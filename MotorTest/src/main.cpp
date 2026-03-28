@@ -133,6 +133,15 @@ void setup()
 	 setupBlueTooth();
 }   
 
+void sendStatus() {
+    
+    String msg = "T:" + String(throttle) +
+                 ",S:" + String(steering);
+    
+    tx->setValue(msg.c_str());
+    tx->notify();
+}
+
 void loop()   
 {   
 	// motorTest();
@@ -193,6 +202,13 @@ void loop()
 			isAdvertising = true;
 		}
 	}
+	
+	static unsigned long lastStatus = 0;
+    
+    if (millis() - lastStatus > 1000) {
+        sendStatus();
+        lastStatus = millis();
+    }
 } 
 
 void setForwardMotion() {
