@@ -18,4 +18,9 @@
 // Motor B2
 #define ENB2_PIN 1 //PWM   
 #define INB3_PIN 41   
-#define INB4_PIN 42   
+#define INB4_PIN 42
+
+// Lights
+#define FORWARD_PIN 35
+#define BACKWARD_PIN 36
+#define STOP_PIN 37

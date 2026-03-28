@@ -1,5 +1,8 @@
 #include <Arduino.h>
 
+#ifndef MOTORCONTROL_H
+#define MOTORCONTROL_H
+
 struct motor {
   int speed = 0;
   int speedPin = -1;
@@ -27,3 +30,4 @@ void setMotorSpeed(motor &motor, int speed);
 void minMotorSpeed(motor &motor);
 void maxMotorSpeed(motor &motor);
 byte getMotorSpeed(motor &motor);
+#endif
