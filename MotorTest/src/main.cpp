@@ -8,9 +8,9 @@
 #include "esp32_s3_pins.h"
 
 // My Car Service For BlueTooth Control
-#define SERVICE_UUID "12345678-1234-1234-1234-1234567890AB"
-#define TX_UUID      "12345678-1234-1234-1234-1234567890AC"
-#define RX_UUID      "12345678-1234-1234-1234-1234567890AD"
+#define SERVICE_UUID "1241C000-1241-1241-1241-1241C00000AA"
+#define TX_UUID      "1241C000-1241-1241-1241-1241C00000AB"
+#define RX_UUID      "1241C000-1241-1241-1241-1241C00000AC"
 
 
 #define MIN_SPEED 25
@@ -31,6 +31,8 @@ void frequencyTest();
 void checkObstacleTest();
 void setRightMotorsSpeed(int speed);
 void setLeftMotorsSpeed(int speed);
+void setRightTurn(int speed, int turnSpeed);
+void setLeftTurn(int speed, int turnSpeed);
 void setForwardMotion();
 void setBackwardMotion();
 void setRotateRight();
@@ -39,10 +41,28 @@ void stopMotors();
 boolean isObstacleDetected(float threshold);
 
 int throttle = 0;
+int lastThrottle = 0;
 int steering = 0;
+int	lastSteering = 0;
 unsigned long lastCmd = 0;
 
+BLEServer *server;
 BLECharacteristic *tx;
+boolean deviceConnected = false;
+boolean isAdvertising = false;
+
+class BTServerCallbacks: public BLEServerCallbacks {
+    void onConnect(BLEServer* pServer) {
+      deviceConnected = true;
+	  Serial.println("Device Connected");
+    };
+
+    void onDisconnect(BLEServer* pServer) {
+      deviceConnected = false;
+	  isAdvertising = false;
+	  Serial.println("Device Disconnected");
+    }
+};
 
 class RXCallbacks: public BLECharacteristicCallbacks {
     void onWrite(BLECharacteristic *c) {
@@ -53,22 +73,33 @@ class RXCallbacks: public BLECharacteristicCallbacks {
         
         if (cmd.startsWith("T:")) {
             throttle = cmd.substring(2).toInt();
+			Serial.print("Received Throttle Command: ");
+			Serial.println(throttle);
         }
         else if (cmd.startsWith("S:")) {
             steering = cmd.substring(2).toInt();
+			Serial.print("Received Steering Command: ");
+			Serial.println(steering);
         }
         else if (cmd == "STOP") {
             throttle = 0;
             steering = 0;
+			Serial.println("Received STOP Command");
+		}
+		else {
+			Serial.print("Received Unknown Command: ");
+			Serial.println(cmd);
         }
     }
 };
 
 void setupBlueTooth() {
-	BLEDevice::init("ESP32 Car");
-	BLEServer *server = BLEDevice::createServer();
+	BLEDevice::init("CAR_GAME");
+	server = BLEDevice::createServer();
 	BLEService *service = server->createService(SERVICE_UUID);
 	
+	server->setCallbacks(new BTServerCallbacks());
+
 	tx = service->createCharacteristic(TX_UUID, BLECharacteristic::PROPERTY_NOTIFY);
 	tx->addDescriptor(new BLE2902());
 	
@@ -76,6 +107,8 @@ void setupBlueTooth() {
 	
 	service->start();
 	server->getAdvertising()->start();
+	Serial.println("Waiting for a client connection to notify...");
+	isAdvertising = true;
 }
 
 void setup()   
@@ -104,13 +137,61 @@ void loop()
 {   
 	// motorTest();
 	// frequencyTest();
-	checkObstacleTest();
+	// checkObstacleTest();
 	// delay(500); // Wait before next reading
 
-	
-	if (millis() - lastCmd > 2000) {
-		throttle = 0;
-		steering = 0;
+	if(deviceConnected) {
+		if(isObstacleDetected(30.0)) {
+			Serial.println("Object detected within 30 cm! Stopping and reversing...");
+			throttle = 0;
+			steering = 0;
+		}
+
+		if (throttle != lastThrottle) {
+			Serial.print("Current Throttle: ");
+			Serial.println(throttle);
+			if (throttle > 0) {
+				if(lastThrottle <= 0) {
+					setForwardMotion();
+				}
+			} else if (throttle < 0) {
+				if(lastThrottle >= 0) {
+					setBackwardMotion();
+				}
+			}
+			setRightMotorsSpeed(abs(throttle));
+			setLeftMotorsSpeed(abs(throttle));
+			lastThrottle = throttle;
+		}
+		if(steering != lastSteering) {
+			float turnIntensity = abs(steering) / 100.0;
+			lastSteering = steering;
+			Serial.print("Current Steering: ");
+			Serial.println(turnIntensity);
+			if(throttle != 0) {
+				if (steering > 0) {
+					setRightTurn(abs(throttle), abs(throttle) - (abs(throttle) * turnIntensity));
+				} else if (steering < 0) {
+					setLeftTurn(abs(throttle), abs(throttle) - (abs(throttle) * turnIntensity));
+				} else	 {
+					setRightMotorsSpeed(abs(throttle));
+					setLeftMotorsSpeed(abs(throttle));
+				}
+			}
+		}
+	} else {
+		if(throttle != 0 || steering != 0) {
+			Serial.println("No device connected. Stopping motors.");
+			throttle = 0;
+			steering = 0;
+			stopMotors();
+		}
+
+		if(!isAdvertising) {
+			server->startAdvertising();
+			Serial.println("Waiting for a client connection to notify...");
+			isAdvertising = true;
+		}
 	}
 } 
 
@@ -184,14 +265,14 @@ void setLeftMotorsSpeed(int speed) {
 	setMotorSpeed(motorB1, speed);
 }
 
-void setRightTurn() {
-	setRightMotorsSpeed(150);
-	setLeftMotorsSpeed(230);
+void setRightTurn(int speed = 200, int turnSpeed = 150) {
+	setRightMotorsSpeed(turnSpeed);
+	setLeftMotorsSpeed(speed);
 }
 
-void setLeftTurn() {
-	setRightMotorsSpeed(230);
-	setLeftMotorsSpeed(150);
+void setLeftTurn(int speed = 200, int turnSpeed = 150) {
+	setRightMotorsSpeed(turnSpeed);
+	setLeftMotorsSpeed(speed);
 }
 
 void setMotorSpeed(int speed) {
@@ -203,14 +284,14 @@ void setMotorSpeed(int speed) {
 boolean isObstacleDetected(float threshold = 30.0) {
 	float distance = distanceSensorReadCM(TRIG_PIN, ECHO_PIN); // Read distance in cm
 
-	// digitalWrite(STOP_PIN, HIGH);
+	digitalWrite(STOP_PIN, HIGH);
 
 	while(distance < 0.10) {
 		// Wait for a valid reading
 		delay(400);
 		distance = distanceSensorReadCM(TRIG_PIN, ECHO_PIN); // Read distance in cm
 	}
-	// digitalWrite(STOP_PIN, LOW);
+	digitalWrite(STOP_PIN, LOW);
 
 	Serial.print("Distance to Object: ");
 	Serial.print(distance);
