@@ -1,6 +1,4 @@
 #include <Arduino.h>
-#include "motorControl.h"
-#include "sensorUtils.h"
 #include <BLEDevice.h>
 #include <BLEServer.h>
 #include <BLEUtils.h>
@@ -31,6 +29,8 @@ class BTServerCallbacks: public BLEServerCallbacks {
 	  isAdvertising = false;
 	  Serial.println("Device Disconnected");
 	  digitalWrite(BACKWARD_PIN, HIGH);
+	  digitalWrite(FORWARD_PIN, LOW);
+	  digitalWrite(STOP_PIN, LOW);
     }
 };
 
@@ -57,17 +57,7 @@ class RXCallbacks: public BLECharacteristicCallbacks {
 			Serial.print(throttle);
 			Serial.print(",");
 			Serial.println(steering);
-        } else if (cmd.startsWith("T:")) {
-            throttle = cmd.substring(2).toInt();
-			Serial.print("Received Throttle Command: ");
-			Serial.println(throttle);
-        }
-        else if (cmd.startsWith("S:")) {
-            steering = cmd.substring(2).toInt();
-			Serial.print("Received Steering Command: ");
-			Serial.println(steering);
-        }
-        else if (cmd == "STOP") {
+        } else if (cmd == "STOP") {
             throttle = 0;
             steering = 0;
 			Serial.println("Received STOP Command");
@@ -92,6 +82,7 @@ void setupBlueTooth() {
 	service->createCharacteristic(RX_UUID, BLECharacteristic::PROPERTY_WRITE)->setCallbacks(new RXCallbacks());
 	
 	service->start();
+	server->getAdvertising()->addServiceUUID(SERVICE_UUID);
 	server->getAdvertising()->start();
 	Serial.println("Waiting for a client connection to notify...");
 	isAdvertising = true;
@@ -138,6 +129,7 @@ void loop()
 			Serial.println("Object detected within 30 cm! Stopping and reversing...");
 			throttle = 0;
 			steering = 0;
+			stopMotors();
 		}
 
 		if (throttle != lastThrottle) {
@@ -158,6 +150,11 @@ void loop()
 				setAllMotorSpeed(abs(throttle));
 			}
 			lastThrottle = throttle;
+		} else {
+			Serial.print("No Throttle Change: ");
+			Serial.print(lastThrottle);
+			Serial.print(" == ");
+			Serial.println(throttle);
 		}
 		if(steering != lastSteering) {
 			float turnIntensity = abs(steering) / 100.0;
@@ -176,14 +173,12 @@ void loop()
 			}
 		}
 	} else {
-		if(throttle != 0 || steering != 0) {
+		if(!isAdvertising) {
 			Serial.println("No device connected. Stopping motors.");
 			throttle = 0;
 			steering = 0;
 			stopMotors();
-		}
-
-		if(!isAdvertising) {
+			server->getAdvertising()->addServiceUUID(SERVICE_UUID);
 			server->startAdvertising();
 			Serial.println("Waiting for a client connection to notify...");
 			isAdvertising = true;
@@ -197,22 +192,3 @@ void loop()
         lastStatus = millis();
     }
 } 
-
-boolean isObstacleDetected(float threshold = 30.0) {
-	float distance = distanceSensorReadCM(TRIG_PIN, ECHO_PIN); // Read distance in cm
-
-	digitalWrite(STOP_PIN, HIGH);
-
-	while(distance < 0.10) {
-		// Wait for a valid reading
-		delay(400);
-		distance = distanceSensorReadCM(TRIG_PIN, ECHO_PIN); // Read distance in cm
-	}
-	digitalWrite(STOP_PIN, LOW);
-
-	Serial.print("Distance to Object: ");
-	Serial.print(distance);
-	Serial.println(" cm");
-
-	return distance < threshold; // Adjust threshold as needed
-}

@@ -1,3 +1,4 @@
+#include "sensorUtils.h"
 #include "motorControl.h"
 #include "esp32_s3_pins.h"
 

@@ -90,14 +90,33 @@ void setRightTurn(int speed, int turnSpeed) {
 }
 
 void setLeftTurn(int speed, int turnSpeed) {
-	setRightMotorsSpeed(turnSpeed);
-	setLeftMotorsSpeed(speed);
+	setLeftMotorsSpeed(turnSpeed);
+	setRightMotorsSpeed(speed);
 }
 
 void setAllMotorSpeed(int speed) {
 	Serial.println("Setting Motor Speed");
 	setRightMotorsSpeed(speed);
 	setLeftMotorsSpeed(speed);
+}
+
+boolean isObstacleDetected(float threshold = 30.0) {
+	float distance = distanceSensorReadCM(TRIG_PIN, ECHO_PIN); // Read distance in cm
+
+	digitalWrite(STOP_PIN, HIGH);
+
+	while(distance < 0.10) {
+		// Wait for a valid reading
+		delay(400);
+		distance = distanceSensorReadCM(TRIG_PIN, ECHO_PIN); // Read distance in cm
+	}
+	digitalWrite(STOP_PIN, LOW);
+
+	Serial.print("Distance to Object: ");
+	Serial.print(distance);
+	Serial.println(" cm");
+
+	return distance < threshold; // Adjust threshold as needed
 }
 
 void checkObstacleTest() {
