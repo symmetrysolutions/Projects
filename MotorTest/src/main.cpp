@@ -7,9 +7,12 @@
 
 int throttle = 0;
 int lastThrottle = 0;
+int direction = 0; // 0 = stopped, 1 = forward, -1 = backward
 int steering = 0;
 int	lastSteering = 0;
 unsigned long lastCmd = 0;
+unsigned long commandCount = 0;
+unsigned long loopCount = 0;
 
 BLEServer *server;
 BLECharacteristic *tx;
@@ -22,6 +25,8 @@ class BTServerCallbacks: public BLEServerCallbacks {
 	  Serial.println("Device Connected");
  	  digitalWrite(BACKWARD_PIN, LOW);
 	  digitalWrite(FORWARD_PIN, HIGH);
+	  commandCount = 0;
+	  loopCount = 0;
    };
 
     void onDisconnect(BLEServer* pServer) {
@@ -53,10 +58,12 @@ class RXCallbacks: public BLECharacteristicCallbacks {
 			throttle = throttlePercent * MAX_SPEED;
             steering = cmd.substring(commaIndex + 1).toInt();
 
+			/*
 			Serial.print("Received Combined Command: ");
 			Serial.print(throttle);
 			Serial.print(",");
 			Serial.println(steering);
+			*/
         } else if (cmd == "STOP") {
             throttle = 0;
             steering = 0;
@@ -66,6 +73,7 @@ class RXCallbacks: public BLECharacteristicCallbacks {
 			Serial.print("Received Unknown Command: ");
 			Serial.println(cmd);
         }
+		commandCount++;
     }
 };
 
@@ -108,48 +116,76 @@ void setup()
 	 setupBlueTooth();
 }   
 
-void sendStatus() {
+void sendStatusValues(long v1, long v2) {
     
-    String msg = "T:" + String(throttle) +
-                 ",S:" + String(steering);
+    String msg = "S:" + String(v1) + "," + String(v2);
     
     tx->setValue(msg.c_str());
     tx->notify();
 }
 
+void sendStatusMessage(String msg) {   
+    tx->setValue(msg.c_str());
+    tx->notify();
+}
+
+void notifyStop() {
+	if(direction == 1) {
+		setBackwardMotion();
+	} else if (direction == -1) {
+		setForwardMotion();
+	}
+	String msg = "OD:STOP";
+    
+    sendStatusMessage(msg);
+	setAllMotorSpeed(100);
+	delay(1000);
+	stopMotors();
+}
+
 void loop()   
 {   
+	static unsigned long lastCheck = 0;
+
 	// motorTest();
 	// frequencyTest();
 	// checkObstacleTest();
 	// delay(500); // Wait before next reading
 
 	if(deviceConnected) {
-		if(isObstacleDetected(30.0)) {
-			Serial.println("Object detected within 30 cm! Stopping and reversing...");
-			throttle = 0;
-			steering = 0;
-			stopMotors();
+		if((millis() - lastCheck > 200 && throttle != 0)) {
+			if(isObstacleDetected(50.0)) {	
+				Serial.println("Object detected within 50 cm! Stopping and reversing...");
+				stopMotors();
+				notifyStop();
+				throttle = 0;
+				steering = 0;
+			}
 		}
 
 		if (throttle != lastThrottle) {
-			Serial.print("Current Throttle: ");
-			Serial.println(throttle);
+			//Serial.print("Current Throttle: ");
+			//Serial.println(throttle);
 			if (throttle > 0) {
 				if(lastThrottle <= 0) {
 					setForwardMotion();
+					direction = 1;
 				}
 			} else if (throttle < 0) {
 				if(lastThrottle >= 0) {
 					setBackwardMotion();
+					direction = -1;
 				}
 			}
 			if(throttle == 0) {
 				stopMotors();
+				direction = 0;
+				sendStatusValues(commandCount, loopCount);
 			} else {
 				setAllMotorSpeed(abs(throttle));
 			}
 			lastThrottle = throttle;
+			loopCount++;
 		} else {
 			Serial.print("No Throttle Change: ");
 			Serial.print(lastThrottle);
@@ -159,8 +195,8 @@ void loop()
 		if(steering != lastSteering) {
 			float turnIntensity = abs(steering) / 100.0;
 			lastSteering = steering;
-			Serial.print("Current Steering: ");
-			Serial.println(turnIntensity);
+			//Serial.print("Current Steering: ");
+			//Serial.println(turnIntensity);
 			if(throttle != 0) {
 				if (steering > 0) {
 					setRightTurn(abs(throttle), abs(throttle) - (abs(throttle) * turnIntensity));
@@ -185,10 +221,12 @@ void loop()
 		}
 	}
 	
-	static unsigned long lastStatus = 0;
     
-    if (millis() - lastStatus > 1000) {
+	/*
+ 	static unsigned long lastStatus = 0;
+   if (millis() - lastStatus > 5000) {
         sendStatus();
         lastStatus = millis();
     }
+	*/
 } 

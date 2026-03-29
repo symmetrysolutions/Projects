@@ -71,15 +71,15 @@ void stopMotors() {
 }
 
 void setRightMotorsSpeed(int speed) {
-	Serial.print("Setting Right Motors Speed to: ");
-	Serial.println(speed);
+	// Serial.print("Setting Right Motors Speed to: ");
+	// Serial.println(speed);
 	setMotorSpeed(motorA2, speed);
 	setMotorSpeed(motorB2, speed);
 }
 
 void setLeftMotorsSpeed(int speed) {
-	Serial.print("Setting Left Motors Speed to: ");
-	Serial.println(speed);
+	// Serial.print("Setting Left Motors Speed to: ");
+	// Serial.println(speed);
 	setMotorSpeed(motorA1, speed);
 	setMotorSpeed(motorB1, speed);
 }
@@ -95,7 +95,7 @@ void setLeftTurn(int speed, int turnSpeed) {
 }
 
 void setAllMotorSpeed(int speed) {
-	Serial.println("Setting Motor Speed");
+	//Serial.println("Setting Motor Speed");
 	setRightMotorsSpeed(speed);
 	setLeftMotorsSpeed(speed);
 }
@@ -103,20 +103,24 @@ void setAllMotorSpeed(int speed) {
 boolean isObstacleDetected(float threshold = 30.0) {
 	float distance = distanceSensorReadCM(TRIG_PIN, ECHO_PIN); // Read distance in cm
 
-	digitalWrite(STOP_PIN, HIGH);
+	// digitalWrite(STOP_PIN, HIGH);
 
+	/* Externally make sure we do not call too frequently to avoid sensor issues. 
+	If distance is negative, it means the reading was invalid, 
+	so we can ignore it and wait for the next valid reading.
 	while(distance < 0.10) {
 		// Wait for a valid reading
 		delay(400);
 		distance = distanceSensorReadCM(TRIG_PIN, ECHO_PIN); // Read distance in cm
 	}
-	digitalWrite(STOP_PIN, LOW);
+	*/
+	// digitalWrite(STOP_PIN, LOW);
 
-	Serial.print("Distance to Object: ");
-	Serial.print(distance);
-	Serial.println(" cm");
+	// Serial.print("Distance to Object: ");
+	// Serial.print(distance);
+	// Serial.println(" cm");
 
-	return distance < threshold; // Adjust threshold as needed
+	return (distance > 0.10 && distance < threshold); // Adjust threshold as needed
 }
 
 void checkObstacleTest() {

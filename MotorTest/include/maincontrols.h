@@ -10,7 +10,7 @@
 #define RX_UUID      "1241C000-1241-1241-1241-1241C00000AC"
 
 
-#define MIN_SPEED 25
+#define MIN_SPEED 50
 #define MAX_SPEED 255
 
 void setupMotorPINS();
