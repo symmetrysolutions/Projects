@@ -21,7 +21,7 @@ void setupMotor(motor &motor, int channel, int speedPin, int directionPin1, int 
   pinMode(motor.speedPin, OUTPUT);
   pinMode(motor.directionPin1, OUTPUT);
   pinMode(motor.directionPin2, OUTPUT);
-  ledcSetup(motor.channel, 500, 8); // Channel 0, 10 kHz frequency, 8-bit resolution
+  ledcSetup(motor.channel, 1000, 8); // 1 kHz frequency, 8-bit resolution (0 - 255)
   ledcAttachPin(motor.speedPin, motor.channel); // Attach the speed pin to
 
   // analogWriteFrequency(5000); // Set frequency to 5 kHz for the speed pin

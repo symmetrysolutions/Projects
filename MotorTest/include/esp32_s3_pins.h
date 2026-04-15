@@ -20,6 +20,9 @@
 #define INB3_PIN 41   
 #define INB4_PIN 42
 
+// TB6612FNG Motor Driver
+#define STBY_PIN 38
+
 // Lights
 #define FORWARD_PIN 35
 #define BACKWARD_PIN 36

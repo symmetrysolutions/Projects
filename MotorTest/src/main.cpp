@@ -104,9 +104,12 @@ void setup()
 	pinMode(FORWARD_PIN, OUTPUT);
   	pinMode(BACKWARD_PIN, OUTPUT);
   	pinMode(STOP_PIN, OUTPUT);
+	pinMode(STBY_PIN, OUTPUT);
 	digitalWrite(FORWARD_PIN, LOW);
   	digitalWrite(BACKWARD_PIN, LOW);
   	digitalWrite(STOP_PIN, LOW);
+	// Set standby pin HIGH to enable motor driver
+	digitalWrite(STBY_PIN, HIGH);
 
 	 // Initialize Motor Structure with Pins   
 	setupMotorPINS();
@@ -147,15 +150,16 @@ void loop()
 {   
 	static unsigned long lastCheck = 0;
 
-	// motorTest();
+	motorTest();
+	
 	// frequencyTest();
 	// checkObstacleTest();
 	// delay(500); // Wait before next reading
-
+/*
 	if(deviceConnected) {
 		if((millis() - lastCheck > 200 && throttle != 0)) {
-			if(isObstacleDetected(50.0)) {	
-				Serial.println("Object detected within 50 cm! Stopping and reversing...");
+			if(isObstacleDetected(40.0)) {	
+				Serial.println("Object detected within 40 cm! Stopping and reversing...");
 				stopMotors();
 				notifyStop();
 				throttle = 0;
@@ -164,8 +168,8 @@ void loop()
 		}
 
 		if (throttle != lastThrottle) {
-			//Serial.print("Current Throttle: ");
-			//Serial.println(throttle);
+			Serial.print("Current Throttle: ");
+			Serial.println(throttle);
 			if (throttle > 0) {
 				if(lastThrottle <= 0) {
 					setForwardMotion();
@@ -186,21 +190,18 @@ void loop()
 			}
 			lastThrottle = throttle;
 			loopCount++;
-		} else {
-			Serial.print("No Throttle Change: ");
-			Serial.print(lastThrottle);
-			Serial.print(" == ");
-			Serial.println(throttle);
 		}
 		if(steering != lastSteering) {
 			float turnIntensity = abs(steering) / 100.0;
 			lastSteering = steering;
-			//Serial.print("Current Steering: ");
-			//Serial.println(turnIntensity);
 			if(throttle != 0) {
 				if (steering > 0) {
+					Serial.print("Turning Right with Steering: ");
+					Serial.println(steering);
 					setRightTurn(abs(throttle), abs(throttle) - (abs(throttle) * turnIntensity));
 				} else if (steering < 0) {
+					Serial.print("Turning Left with Steering: ");
+					Serial.println(steering);
 					setLeftTurn(abs(throttle), abs(throttle) - (abs(throttle) * turnIntensity));
 				} else	 {
 					setRightMotorsSpeed(abs(throttle));
@@ -220,7 +221,7 @@ void loop()
 			isAdvertising = true;
 		}
 	}
-	
+*/
     
 	/*
  	static unsigned long lastStatus = 0;

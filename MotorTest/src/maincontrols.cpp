@@ -7,11 +7,12 @@ motor motorB1;
 motor motorB2;
 
 void setupMotorPINS() {
-	// Initialize Motor Structure with Pins   
+	// This assumes A1 and B1 both control the left motors, 
+	//and A2 and B2 control the right motors. Adjust as necessary based on your wiring.   
 	setupMotor(motorA1, 0, ENA1_PIN, INA1_PIN, INA2_PIN);
 	setupMotor(motorA2, 1, ENA2_PIN, INA3_PIN, INA4_PIN);
-	setupMotor(motorB1, 2, ENB1_PIN, INB1_PIN, INB2_PIN);
-	setupMotor(motorB2, 3, ENB2_PIN, INB3_PIN, INB4_PIN);
+	setupMotor(motorB1, 0, ENB1_PIN, INB1_PIN, INB2_PIN);
+	setupMotor(motorB2, 1, ENB2_PIN, INB3_PIN, INB4_PIN);
 }
 
 void setForwardMotion() {
@@ -193,23 +194,31 @@ void motorTest()
 	 Serial.println("Stopping Motors");
 	 stopMotors();
 	 delay(5000);
-	 Serial.println("Turn Right");   
-	 setRightTurn(200, 150);   
-	 Serial.println("Looping Right");   
-	 delay(5000);   
-	 Serial.println("Stopping Motors");
-	 stopMotors();
-	 delay(2000);
-	 Serial.println("Turn Left");
-	 setLeftTurn(200, 150);
-     delay(5000);
-	 Serial.println("Stopping Motors");
-	 stopMotors();
-	 delay(2000);
-	 Serial.println("Straight Path");
-	 setForwardMotion();
-	 setAllMotorSpeed(250);
+	 Serial.println("Right Motors Only");   
+	 setRightMotorsSpeed(200);
 	 delay(5000);
+	 Serial.println("Stopping Motors");
+	 stopMotors();
+	 delay(2000);
+	 Serial.println("Left Motors Only");
+	 setLeftMotorsSpeed(200);
+	 delay(5000);
+	 Serial.println("Stopping Motors");
+	 stopMotors();
+	 delay(2000);
+	 Serial.println("All Forwards");
+	 setForwardMotion();
+	 setAllMotorSpeed(200);
+	 delay(5000);
+	 Serial.println("Stopping Motors");
+	 stopMotors();
+	 delay(2000);
+	 Serial.println("All Backwards");
+	 setBackwardMotion();
+	 setAllMotorSpeed(200);
+	 delay(5000);
+	 Serial.println("Stopping Motors");
+	 stopMotors();
 }
 
 void increaseMotorsSpeed()   
