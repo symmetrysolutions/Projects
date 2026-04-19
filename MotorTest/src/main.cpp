@@ -4,12 +4,14 @@
 #include <BLEUtils.h>
 #include <BLE2902.h>
 #include "maincontrols.h"
+#include "buzzerControl.h"
 
 int throttle = 0;
 int lastThrottle = 0;
 int direction = 0; // 0 = stopped, 1 = forward, -1 = backward
 int steering = 0;
 int	lastSteering = 0;
+int	crashCount = 0;
 unsigned long lastCmd = 0;
 unsigned long commandCount = 0;
 unsigned long loopCount = 0;
@@ -27,7 +29,9 @@ class BTServerCallbacks: public BLEServerCallbacks {
 	  digitalWrite(FORWARD_PIN, HIGH);
 	  commandCount = 0;
 	  loopCount = 0;
-   };
+	  crashCount = 0;
+	  // playMelody(pinkPantherMelody, sizeof(pinkPantherMelody) / sizeof(pinkPantherMelody[0]), pinkPantherTempo);
+	}
 
     void onDisconnect(BLEServer* pServer) {
       deviceConnected = false;
@@ -36,6 +40,7 @@ class BTServerCallbacks: public BLEServerCallbacks {
 	  digitalWrite(BACKWARD_PIN, HIGH);
 	  digitalWrite(FORWARD_PIN, LOW);
 	  digitalWrite(STOP_PIN, LOW);
+	  playMelody(pacmanMelody, sizeof(pacmanMelody) / sizeof(pacmanMelody[0]), pacmanTempo);
     }
 };
 
@@ -117,6 +122,7 @@ void setup()
 	 // Initialize Distance Sensor
 	 distanceSensorSetup(TRIG_PIN, ECHO_PIN);
 	 setupBlueTooth();
+	 setupBuzzer(BUZZER_PIN);
 }   
 
 void sendStatusValues(long v1, long v2) {
@@ -138,24 +144,27 @@ void notifyStop() {
 	} else if (direction == -1) {
 		setForwardMotion();
 	}
-	String msg = "OD:STOP";
+	String msg = "OD:";
     
+	crashCount++;
+	msg += String(crashCount);
     sendStatusMessage(msg);
 	setAllMotorSpeed(100);
 	delay(1000);
 	stopMotors();
+	playMelody(nokiaMelody, sizeof(nokiaMelody) / sizeof(nokiaMelody[0]), nokiaTempo);
 }
 
 void loop()   
 {   
 	static unsigned long lastCheck = 0;
 
-	motorTest();
+	// motorTest();
 	
 	// frequencyTest();
 	// checkObstacleTest();
 	// delay(500); // Wait before next reading
-/*
+//
 	if(deviceConnected) {
 		if((millis() - lastCheck > 200 && throttle != 0)) {
 			if(isObstacleDetected(40.0)) {	
@@ -165,6 +174,7 @@ void loop()
 				throttle = 0;
 				steering = 0;
 			}
+			lastCheck = millis();
 		}
 
 		if (throttle != lastThrottle) {
@@ -221,7 +231,7 @@ void loop()
 			isAdvertising = true;
 		}
 	}
-*/
+//
     
 	/*
  	static unsigned long lastStatus = 0;

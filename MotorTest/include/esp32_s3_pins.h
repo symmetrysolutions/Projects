@@ -3,13 +3,13 @@
 #define ECHO_PIN 5
 
 // Motor A1
-#define ENA1_PIN 16 //PWM   
-#define INA1_PIN 17   
-#define INA2_PIN 18
+#define ENA1_PIN 12 //PWM   
+#define INA1_PIN 14   
+#define INA2_PIN 13
 // Motor A2
-#define ENA2_PIN 12 //PWM   
-#define INA3_PIN 13   
-#define INA4_PIN 14   
+#define ENA2_PIN 16 //PWM   
+#define INA3_PIN 17   
+#define INA4_PIN 18   
 
 // Motor B1
 #define ENB1_PIN 2 //PWM   
@@ -27,3 +27,5 @@
 #define FORWARD_PIN 35
 #define BACKWARD_PIN 36
 #define STOP_PIN 37
+
+#define BUZZER_PIN 7
