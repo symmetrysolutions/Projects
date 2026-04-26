@@ -179,6 +179,6 @@ int theLickMelody[] = {
 };
 #define theLickTempo 108
 
-void setupBuzzer(int pin = 7);
+void setupBuzzer(int pin, int channel, int frequency = 2000, int resolution = 8);
 void playMelody(int	melody[], int noteDuration[], int length);
 void playMelody(int melody[], int length, int tempo);

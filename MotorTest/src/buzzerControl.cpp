@@ -1,23 +1,31 @@
 #include <Arduino.h>
 
 int buzzerPin = 7;
+int buzzerChannel = 2;
+int buzzerFrequency = 2000;
+int buzzerResolution = 10;
 
-void setupBuzzer(int pin) {
+void setupBuzzer(int pin, int channel, int frequency, int resolution) {
   buzzerPin = pin;
+  buzzerChannel = channel;
+  buzzerFrequency = frequency;
+  buzzerResolution = resolution;
   pinMode(buzzerPin, OUTPUT);
+  ledcSetup(buzzerChannel, buzzerFrequency, buzzerResolution);
+  ledcAttachPin(buzzerPin, buzzerChannel);
 }
 
 // Function to play a sound or melody
 void playMelody(int melody[], int noteDuration[], int length) {
   for (int i = 0; i < length; i++) {
     if (melody[i] == 0) {
-      noTone(buzzerPin);
+      ledcWriteTone(buzzerChannel, 0);
     } else {
-      tone(buzzerPin, melody[i], noteDuration[i]);
+      ledcWriteTone(buzzerChannel, melody[i]);
     }
     delay(noteDuration[i] * 1.30);
   }
-  noTone(buzzerPin);
+  ledcWriteTone(buzzerChannel, 0);
 }
 
 void playMelody(int melody[], int length, int tempo) {
@@ -44,12 +52,12 @@ void playMelody(int melody[], int length, int tempo) {
     }
 
     // we only play the note for 90% of the duration, leaving 10% as a pause
-    tone(buzzerPin, melody[thisNote], noteDuration*0.9);
+    ledcWriteTone(buzzerChannel, melody[thisNote]);
 
     // Wait for the specief duration before playing the next note.
     delay(noteDuration);
     
     // stop the waveform generation before the next note.
-    noTone(buzzerPin);
+    ledcWriteTone(buzzerChannel, 0);
   }
 }

@@ -15,6 +15,7 @@ int	crashCount = 0;
 unsigned long lastCmd = 0;
 unsigned long commandCount = 0;
 unsigned long loopCount = 0;
+boolean isTesting = false;
 
 BLEServer *server;
 BLECharacteristic *tx;
@@ -30,7 +31,6 @@ class BTServerCallbacks: public BLEServerCallbacks {
 	  commandCount = 0;
 	  loopCount = 0;
 	  crashCount = 0;
-	  // playMelody(pinkPantherMelody, sizeof(pinkPantherMelody) / sizeof(pinkPantherMelody[0]), pinkPantherTempo);
 	}
 
     void onDisconnect(BLEServer* pServer) {
@@ -73,6 +73,9 @@ class RXCallbacks: public BLECharacteristicCallbacks {
             throttle = 0;
             steering = 0;
 			Serial.println("Received STOP Command");
+		} else if (cmd == "TEST") {
+			isTesting = true;
+			Serial.println("Received TEST Command");
 		}
 		else {
 			Serial.print("Received Unknown Command: ");
@@ -122,7 +125,7 @@ void setup()
 	 // Initialize Distance Sensor
 	 distanceSensorSetup(TRIG_PIN, ECHO_PIN);
 	 setupBlueTooth();
-	 setupBuzzer(BUZZER_PIN);
+	 setupBuzzer(BUZZER_PIN, 2, 1000, 10);
 }   
 
 void sendStatusValues(long v1, long v2) {
@@ -152,22 +155,17 @@ void notifyStop() {
 	setAllMotorSpeed(100);
 	delay(1000);
 	stopMotors();
-	playMelody(nokiaMelody, sizeof(nokiaMelody) / sizeof(nokiaMelody[0]), nokiaTempo);
+	playMelody(theLickMelody, sizeof(theLickMelody) / sizeof(theLickMelody[0]), theLickTempo);
 }
 
-void loop()   
-{   
+void controlLoop() {
 	static unsigned long lastCheck = 0;
 
-	// motorTest();
-	
-	// frequencyTest();
-	// checkObstacleTest();
-	// delay(500); // Wait before next reading
-//
 	if(deviceConnected) {
 		if((millis() - lastCheck > 200 && throttle != 0)) {
-			if(isObstacleDetected(40.0)) {	
+			// Check for obstacles every 200 ms when moving
+			// Only checking for obstacles when moving forward
+			if(isObstacleDetected(30.0) && direction == 1) {	
 				Serial.println("Object detected within 40 cm! Stopping and reversing...");
 				stopMotors();
 				notifyStop();
@@ -229,8 +227,25 @@ void loop()
 			server->startAdvertising();
 			Serial.println("Waiting for a client connection to notify...");
 			isAdvertising = true;
+			//playMelody(pinkPantherMelody, sizeof(pinkPantherMelody) / sizeof(pinkPantherMelody[0]), pinkPantherTempo);
 		}
 	}
+}
+
+void loop()   
+{   
+	if(isTesting) {
+		sendStatusMessage("TEST");
+		motorTest();
+		sendStatusMessage("DONE");
+	} else {
+		controlLoop();
+	}
+	isTesting = false;
+	// frequencyTest();
+	// checkObstacleTest();
+	// delay(500); // Wait before next reading
+//
 //
     
 	/*

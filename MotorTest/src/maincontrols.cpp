@@ -193,49 +193,49 @@ void motorTest()
 	 decreaseMotorsSpeed();
 	 Serial.println("Stopping Motors");
 	 stopMotors();
-	 delay(5000);
+	 delay(4000);
 	 Serial.println("Right Motors Only");   
-	 setRightMotorsSpeed(200);
-	 delay(5000);
+	 setRightMotorsSpeed(150);
+	 delay(4000);
 	 Serial.println("Stopping Motors");
 	 stopMotors();
 	 delay(2000);
 	 Serial.println("Left Motors Only");
-	 setLeftMotorsSpeed(200);
-	 delay(5000);
+	 setLeftMotorsSpeed(150);
+	 delay(4000);
 	 Serial.println("Stopping Motors");
 	 stopMotors();
 	 delay(2000);
 	 Serial.println("All Forwards");
 	 setForwardMotion();
-	 setAllMotorSpeed(200);
-	 delay(5000);
+	 setAllMotorSpeed(150);
+	 delay(4000);
 	 Serial.println("Stopping Motors");
 	 stopMotors();
 	 delay(2000);
 	 Serial.println("All Backwards");
 	 setBackwardMotion();
-	 setAllMotorSpeed(200);
-	 delay(5000);
+	 setAllMotorSpeed(150);
+	 delay(4000);
 	 Serial.println("Stopping Motors");
 	 stopMotors();
 }
 
 void increaseMotorsSpeed()   
 {   
-	 for (int speed = MIN_SPEED; speed <= MAX_SPEED; speed+=5) {   
+	 for (int speed = MIN_SPEED; speed <= MAX_SPEED; speed+=10) {   
 	   Serial.print("Testing Frequency: ");
 	   Serial.print(ledcReadFreq(motorA1.channel));
 	   Serial.print(", Speed: ");
 	   Serial.println(speed);
 	   setAllMotorSpeed(speed);
-	   delay(1000); // Add small delay between changes   
+	   delay(500); // Add small delay between changes   
 	 }   
 }
 
 void decreaseMotorsSpeed()   
 {   
-	 for (int speed = MAX_SPEED; speed >= MIN_SPEED; speed--) {   
+	 for (int speed = MAX_SPEED; speed >= MIN_SPEED; speed-=5) {   
 	   setAllMotorSpeed(speed);
 	   delay(40); // Add small delay between changes   
 	 }   

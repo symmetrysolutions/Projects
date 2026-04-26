@@ -11,7 +11,7 @@
 
 
 #define MIN_SPEED 50
-#define MAX_SPEED 255
+#define MAX_SPEED 230
 
 void setupMotorPINS();
 void setAllMotorSpeed(int speed);
